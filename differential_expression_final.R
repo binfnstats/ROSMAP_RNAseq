@@ -81,6 +81,36 @@ scale_color_discrete(name = '') +
   theme(legend.direction = 'horizontal', legend.position = 'top')
 dev.off()
 
+# ANOVA to look for factors contributing to variation in the data that should be included in the differential expression model
+z=reads_fil
+m=melt(z)
+colnames(m) <- c("sample_ID","counts")
+
+
+
+ROS_or_MAP <- rep(as.numeric(covar$studyn), each=nrow(z))
+Cognitive_Status <- rep(as.numeric(covar$cogdx), each=nrow(z))
+Age <- rep(as.numeric(covar$age_death), each=nrow(z))
+Education <- rep(as.numeric(covar$educ), each=nrow(z))
+Sex <- rep(as.numeric(covar$msex), each=nrow(z))
+PMI <- rep(as.numeric(covar$pmi), each=nrow(z))
+Batch <- rep(as.numeric(covar$batch), each=nrow(z))
+RIN <- rep(as.numeric(covar$rin), each=nrow(z))
+Diagnosis <- rep(as.numeric(covar$ad_reagan), each=nrow(z))
+APOE_Status <- rep(as.numeric(covar$apoe_num), each=nrow(z))
+
+
+matrix <- data.frame(m, PMI,ROS_or_MAP,Age,Batch,RIN,Diagnosis,APOE_Status,Sex,Education,Cognitive_Status)
+fit1 <- lm(counts ~ Diagnosis + PMI+ROS_or_MAP+Age+Cognitive_Status+ Batch+RIN+APOE_Status+Sex+Education, data=matrix)
+a <- anova(fit1)
+nfac <- length(a[,1])-1
+maxval = 100
+pdf(file="Anovar.pdf")
+nfac <- length(a[,1])-1
+barplot(100*a$"Sum Sq"[1:nfac]/sum(a$"Sum Sq"[1:nfac]),names.arg=rownames(a[1:nfac,]),ylim=c(0,maxval),cex.names=0.6,las=3,space=0.3,width=1,xlim=c(1,20))
+dev.off()                
+                
+                
 # create design matrix for differential expression analysis
 design <- model.matrix(~0 + ad_reagan + rin + batch + study+ msex + age_death, data=covar)
 mart=useMart(biomart = "ENSEMBL_MART_ENSEMBL",host="http://Dec2017.archive.ensembl.org", dataset="hsapiens_gene_ensembl")
